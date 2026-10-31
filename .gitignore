@@ -1,0 +1,9 @@
+# Ambientes e arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# Backups
+*~
+*.bak
