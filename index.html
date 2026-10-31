@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlertaEncosta — Protótipo de Arquitetura Convergente</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #273549;
+      --bg-input: #0b1120;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #6366f1;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --critical: #dc2626;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background-color: rgba(30, 41, 59, 0.95);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span {
+      color: var(--primary);
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .badge-sim {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-sim::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      background-color: var(--warning);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    .nav-tabs {
+      background-color: #151f32;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      padding: 0 24px;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      padding: 14px 18px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tab:hover {
+      color: var(--text-main);
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-counter {
+      background-color: var(--danger);
+      color: white;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 24px;
+      flex: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .view-panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .view-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid layout for Dashboard */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Sectors Grid */
+    .sectors-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .sector-card {
+      background-color: #162033;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sector-card.status-alert {
+      border-color: var(--danger);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.15) 0%, #162033 60%);
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+    }
+
+    .sector-card.status-stale {
+      border-color: var(--warning);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, #162033 60%);
+    }
+
+    .sector-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .sector-name {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .sector-geo {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .sector-badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-normal {
+      background-color: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .badge-alert {
+      background-color: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+      border: 1px solid var(--danger);
+      animation: alertBlink 1.4s infinite;
+    }
+
+    .badge-stale {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: #fcd34d;
+      border: 1px solid var(--warning);
+    }
+
+    @keyframes alertBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+    }
+
+    .telemetry-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .telemetry-val {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .val-critical {
+      color: #f87171;
+    }
+
+    .progress-bar-bg {
+      background-color: rgba(255, 255, 255, 0.08);
+      height: 6px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .sector-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .btn-action-small {
+      background-color: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action-small:hover {
+      background-color: var(--primary);
+      color: #000;
+    }
+
+    /* Simulation Control Box */
+    .scenario-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .btn-scenario {
+      background-color: #1e293b;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .btn-scenario:hover {
+      background-color: var(--bg-card-hover);
+      border-color: var(--primary);
+    }
+
+    .btn-scenario small {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: normal;
+    }
+
+    .btn-scenario.active-scenario {
+      border-color: var(--primary);
+      background-color: rgba(56, 189, 248, 0.12);
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    textarea.form-control {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #0f172a;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-danger:hover {
+      background-color: var(--critical);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    /* Decision Protocol / Event Box */
+    .event-card {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .event-info h4 {
+      color: #fca5a5;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .event-info p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Laboratory Experiments Section */
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stopwatch-box {
+      background-color: #10192a;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .stopwatch-display {
+      font-size: 3.2rem;
+      font-family: "Courier New", Courier, monospace;
+      font-weight: bold;
+      color: var(--primary);
+      margin: 10px 0;
+      letter-spacing: 2px;
+    }
+
+    .metric-callout {
+      background-color: rgba(56, 189, 248, 0.08);
+      border: 1px dashed var(--primary);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .formula-box {
+      background-color: #0b1120;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      margin: 10px 0;
+      text-align: center;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    /* History and Table */
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.82rem;
+    }
+
+    th {
+      background-color: #151f32;
+      padding: 12px 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 90%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      animation: modalScale 0.25s ease;
+    }
+
+    @keyframes modalScale {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .alert-banner-danger {
+      background-color: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .alert-banner-info {
+      background-color: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #bae6fd;
+    }
+
+    .stats-card-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background-color: #162033;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stat-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .code-preview {
+      background-color: #0b1120;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.78rem;
+      color: #93c5fd;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🏔️</div>
+      <div>
+        <div class="brand-title">Alerta<span>Encosta</span> <span style="font-size:0.75rem; color:#6366f1; border:1px solid #6366f1; padding:2px 6px; border-radius:4px; margin-left:6px;">AC H3</span></div>
+        <div class="brand-sub">Arquiteturas Convergentes | Apoio à Decisão e Padronização de Alertas (PN-PDC 2025–2035)</div>
+      </div>
+    </div>
+    <div class="system-status">
+      <div class="badge-sim" title="Ambiente exclusivamente acadêmico e experimental">AMBIENTE DE SIMULAÇÃO ACADÊMICA</div>
+      <div id="clockDisplay" style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('dashboard')">
+      <span>📊</span> Painel de Monitoramento
+    </button>
+    <button class="nav-tab" onclick="switchTab('protocol')">
+      <span>📝</span> Protocolo Padronizado (Meta 2.2.2)
+      <span class="tab-counter" id="eventBadge">0</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab('lab')">
+      <span>⏱️</span> Ensaio Experimental (Tm vs. Ta)
+    </button>
+    <button class="nav-tab" onclick="switchTab('history')">
+      <span>📜</span> Histórico & Auditoria
+    </button>
+    <button class="nav-tab" onclick="switchTab('pitch')">
+      <span>🎤</span> Síntese do Pitch (5 Minutos)
+    </button>
+  </nav>
+
+  <!-- Main Container -->
+  <main>
+
+    <!-- VIEW 1: DASHBOARD DE MONITORAMENTO -->
+    <section id="view-dashboard" class="view-panel active">
+      <div class="dashboard-grid">
+        
+        <!-- Left: Sector Cards & Telemetry -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📡 Setores de Monitoramento Telemétrico</div>
+                <div class="card-subtitle">Comunidade Encosta Piloto (Setores Fictícios A, B e C)</div>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                Regra Didática: <strong style="color:var(--primary);">Chuva 1h &ge; 30mm</strong> E <strong style="color:var(--primary);">Umidade Solo &ge; 80%</strong>
+              </div>
+            </div>
+
+            <!-- Sectors Cards -->
+            <div class="sectors-container" id="sectorsContainer">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div class="alert-banner alert-banner-info">
+              <span style="font-size: 1.2rem;">ℹ️</span>
+              <div>
+                <strong>Critério de Qualidade da Informação:</strong> Se a telemetria não for renovada em até <strong>30 segundos</strong>, o setor é sinalizado como <span style="color:#fcd34d; font-weight:bold;">DESATUALIZADO</span>. A ausência de dados não pode ser interpretada operacionalmente como condição de segurança.
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Triggers / Attention Events -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">⚠️ Eventos em Aberto para Triagem Operacional</div>
+                <div class="card-subtitle">Gatilhos automáticos aguardando análise humana formal do agente</div>
+              </div>
+            </div>
+            <div id="pendingEventsContainer">
+              <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px;">Nenhum evento crítico aguardando triagem no momento.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Scenario Injection & Manual Testing -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🕹️ Injeção de Cenários de Teste</div>
+                <div class="card-subtitle">Simulação controlada de eventos para validação da arquitetura</div>
+              </div>
+            </div>
+
+            <div class="scenario-buttons">
+              <button class="btn-scenario" onclick="loadScenario('normal')">
+                <span>🟢 1. Estabilidade</span>
+                <small>Chuva baixa, solo estável em todos os setores</small>
+              </button>
+              <button class="btn-scenario" onclick="loadScenario('critical_b')">
+                <span>🔴 2. Crítico no Setor B</span>
+                <small>Chuva 42mm/h + Umidade 88% (Dispara regra)</small>
+              </button>
+              <button class="btn-scenario" onclick="loadScenario('high_rain_only')">
+                <span>🟡 3. Apenas Chuva Alta</span>
+                <small>Chuva 38mm/h + Solo 55% (Não atinge regra)</small>
+              </button>
+              <button class="btn-scenario" onclick="loadScenario('stale_data')">
+                <span>⏳ 4. Telemetria Desatualizada</span>
+                <small>Timestamp defasado > 30s (Falha de link)</small>
+              </button>
+              <button class="btn-scenario" onclick="loadScenario('invalid_input')">
+                <span>❌ 5. Leitura Absurda / Erro</span>
+                <small>Chuva negativa ou Umidade 140% (Rejeição)</small>
+              </button>
+            </div>
+
+            <!-- Custom injection form -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; margin-top: 10px;">
+              <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; color: var(--text-muted);">
+                Injeção Manual Paramétrica:
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                  <label class="form-label">Setor Alvo</label>
+                  <select id="manualSector" class="form-control">
+                    <option value="A">Setor A (Vila Alta)</option>
+                    <option value="B" selected>Setor B (Morro Esperança)</option>
+                    <option value="C">Setor C (Encosta Sul)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Chuva 1h (mm)</label>
+                  <input type="number" id="manualRain" class="form-control" value="35" step="0.1">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Umidade do Solo (%)</label>
+                <input type="number" id="manualMoisture" class="form-control" value="85" step="0.5">
+              </div>
+              <button class="btn-secondary" style="width: 100%;" onclick="injectManualData()">
+                ⚡ Injetar Dados na Arquitetura
+              </button>
+              <div id="injectionFeedback" style="margin-top: 8px; font-size: 0.75rem; text-align: center;"></div>
+            </div>
+          </div>
+
+          <!-- Architecture Reference Summary Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🏛️ Convergência Tecnológica</div>
+                <div class="card-subtitle">Mapeamento de papéis no protótipo e na arquitetura</div>
+              </div>
+            </div>
+            <ul style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; list-style: none;">
+              <li>🌐 <strong>Web Application:</strong> Dashboard reativo em HTML5/CSS3/JS modular.</li>
+              <li>⚙️ <strong>Motor de Regras:</strong> Validação determinística de limites operacionais.</li>
+              <li>💾 <strong>Persistência:</strong> Armazenamento estruturado de decisões locais.</li>
+              <li>📊 <strong>Analytics & Telemetria:</strong> Cálculo contínuo de saturação e cronometria.</li>
+              <li>📡 <strong>Integração de Alerta:</strong> Formato padronizado aderente à Meta 2.2.2.</li>
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 2: PROTOCOLO PADRONIZADO (META 2.2.2) -->
+    <section id="view-protocol" class="view-panel">
+      <div class="card" style="max-width: 840px; margin: 0 auto;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📝 Protocolo de Registro e Emissão Padronizada de Alerta</div>
+            <div class="card-subtitle">Implementação computacional do fluxo operacional unificado (Meta 2.2.2 / PN-PDC)</div>
+          </div>
+          <span class="badge-sim">Módulo de Decisão Humana</span>
+        </div>
+
+        <div class="alert-banner alert-banner-danger" id="protocolWarning">
+          <span style="font-size: 1.2rem;">⚠️</span>
+          <div>
+            <strong>Atenção Obrigatória:</strong> A computação atua como <em>suporte e integração</em>. A decisão final de emissão ou descarte de alerta compete privativamente ao agente humano qualificado, com registro de autoria, justificativa técnica e carimbo temporal imutável.
+          </div>
+        </div>
+
+        <form id="protocolForm" onsubmit="event.preventDefault(); submitProtocolDecision();">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label">Setor Sob Avaliação</label>
+              <select id="protoSector" class="form-control" onchange="syncProtocolSectorData()">
+                <option value="A">Setor A — Vila Alta</option>
+                <option value="B" selected>Setor B — Morro da Esperança</option>
+                <option value="C">Setor C — Encosta Sul</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Identificador do Agente Plantonista</label>
+              <input type="text" id="protoAgent" class="form-control" placeholder="Ex: Agente 01 (COMPDEC)" required value="Agente 01">
+            </div>
+          </div>
+
+          <!-- Current Telemetry Readout -->
+          <div style="background-color: #121c2d; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700;">TELEMETRIA AMBIENTAL CONSOLIDADADA DO SETOR SELECIONADO:</div>
+            <div style="display: flex; justify-content: space-around; font-size: 0.85rem;">
+              <div>Chuva 1h: <strong id="protoRainVal" style="color:var(--primary);">-- mm</strong></div>
+              <div>Umidade do Solo: <strong id="protoMoistVal" style="color:var(--primary);">-- %</strong></div>
+              <div>Status: <span id="protoStatusVal" class="sector-badge badge-normal">--</span></div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label">Decisão Operacional</label>
+              <select id="protoDecision" class="form-control" onchange="updateDecisionUI()">
+                <option value="EMITIR_ALERTA">🚨 Emitir Alerta Preventivo de Risco</option>
+                <option value="ENCERRAR_SEM_ALERTA">✅ Encerrar Evento sem Alerta (Justificado)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nível de Severidade</label>
+              <select id="protoLevel" class="form-control">
+                <option value="ATENCAO">🟡 Amarelo — Atenção</option>
+                <option value="ALERTA_LARANJA" selected>🟠 Laranja — Alerta com Risco Alto</option>
+                <option value="ALERTA_VERMELHO">🔴 Vermelho — Risco Muito Alto / Evacuação Imediata</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Justificativa Técnica Operacional (Obrigatória — mín. 15 caracteres)</label>
+            <textarea id="protoJustification" class="form-control" placeholder="Descreva os fatores técnicos e condições geotécnicas observadas que sustentam a decisão..." required>Leituras pluviométricas e saturação do solo atingiram o limiar crítico definido no plano de contingência para o Setor B.</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mensagem Padronizada ao Público / Comunidade (Formato CAP/Defesa Civil)</label>
+            <textarea id="protoMessage" class="form-control" required>[DEFESA CIVIL ALERTA]: Risco elevado de deslizamento no Setor B (Morro da Esperança). Moradores de encostas íngremes devem observar trincas e buscar abrigo seguro.</textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="btn-primary" id="btnSubmitProtocol">
+              💾 Registrar Decisão no Protocolo Unificado
+            </button>
+            <button type="button" class="btn-secondary" onclick="resetProtocolForm()">
+              Limpar Campos
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: LABORATÓRIO EXPERIMENTAL (TM vs TA) -->
+    <section id="view-lab" class="view-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">⏱️ Ensaio Experimental Cronometrado: Validação do Indicador da Solução</div>
+            <div class="card-subtitle">Comparação metrológica do tempo de análise e despacho: Fluxo Manual (Tm) vs. Fluxo Apoiado Convergente (Ta)</div>
+          </div>
+          <span class="badge-sim">Avaliação Metrológica</span>
+        </div>
+
+        <div class="lab-grid">
+          
+          <!-- Experiment Controller -->
+          <div>
+            <div class="form-group">
+              <label class="form-label">1. Selecione a Modalidade de Ensaio</label>
+              <select id="labMode" class="form-control" onchange="setupLabCase()">
+                <option value="manual">Fluxo A: Tradicional / Manual Descentralizado (Tm)</option>
+                <option value="supported" selected>Fluxo B: Arquitetura Convergente AlertaEncosta (Ta)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">2. Caso de Teste Fictício</label>
+              <select id="labCase" class="form-control" onchange="setupLabCase()">
+                <option value="case1">Caso 01 — Chuva intensa localizada no Morro da Esperança</option>
+                <option value="case2">Caso 02 — Saturação hídrica rápida após temporal vespertino</option>
+                <option value="case3">Caso 03 — Análise de encosta após precipitação acumulada</option>
+              </select>
+            </div>
+
+            <div class="stopwatch-box">
+              <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Cronômetro de Despacho</div>
+              <div class="stopwatch-display" id="labTimer">00.0s</div>
+              <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-primary" style="width: auto; padding: 8px 24px;" id="btnLabStart" onclick="startLabTrial()">
+                  ▶️ Iniciar Ensaio
+                </button>
+                <button class="btn-danger" style="width: auto; padding: 8px 24px;" id="btnLabStop" onclick="finishLabTrial()" disabled>
+                  ⏹️ Concluir Registro
+                </button>
+              </div>
+            </div>
+
+            <div id="labTaskArea" style="background-color: #121c2d; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+              <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; color: var(--primary);" id="labInstructionsTitle">Instruções do Ensaio:</div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;" id="labInstructionsText">
+                Pressione "Iniciar Ensaio". O sistema exibirá os dados e iniciará o cronômetro. Preencha a justificativa e confirme o despacho para registrar o tempo.
+              </p>
+            </div>
+          </div>
+
+          <!-- Indicator & Results Analytics -->
+          <div>
+            <div class="card-title" style="font-size: 0.95rem; margin-bottom: 8px;">📈 Métricas Consolidadas do Indicador</div>
+            
+            <div class="stats-card-group">
+              <div class="stat-card">
+                <div class="stat-val" id="valTm">--</div>
+                <div class="stat-sub">Tempo Médio Manual (Tm)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-val" id="valTa">--</div>
+                <div class="stat-sub">Tempo Médio Apoiado (Ta)</div>
+              </div>
+              <div class="stat-card" style="border-color: rgba(34,197,94,0.4);">
+                <div class="stat-val" style="color: var(--success);" id="valReduction">--</div>
+                <div class="stat-sub">Redução de Tempo (%)</div>
+              </div>
+            </div>
+
+            <div class="metric-callout">
+              <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Fórmula Oficial do Indicador da Solução:</div>
+              <div class="formula-box">
+                Redução (%) = [ (Tm - Ta) / Tm ] × 100
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                <strong>Meta Operacional Estabelecida:</strong> Reduzir em no mínimo <strong>30%</strong> o tempo transcorrido entre a identificação do limiar de risco e a conclusão do despacho padronizado, eliminando redundâncias e erros manuais de transcrição.
+              </p>
+            </div>
+
+            <!-- Trials Table -->
+            <div style="margin-top: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">Histórico dos Ensaios Realizados:</span>
+                <button class="btn-action-small" onclick="clearLabTrials()">Limpar Ensaios</button>
+              </div>
+              <div class="table-responsive" style="max-height: 180px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Modalidade</th>
+                      <th>Caso</th>
+                      <th>Tempo (s)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="labTrialsBody">
+                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Nenhum ensaio computado até o momento.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: HISTÓRICO & AUDITORIA -->
+    <section id="view-history" class="view-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📜 Registro Auditável de Decisões e Alertas</div>
+            <div class="card-subtitle">Trilha de conformidade, imutabilidade temporal e exportação para formatos abertos</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-action-small" onclick="exportHistoryJSON()">⬇️ Exportar JSON (Padrão CAP)</button>
+            <button class="btn-action-small" onclick="exportTrialsCSV()">📊 Exportar CSV de Ensaios</button>
+            <button class="btn-action-small" style="color:var(--danger); border-color:var(--danger);" onclick="clearAllHistory()">🗑️ Limpar Tudo</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Setor</th>
+                <th>Decisão</th>
+                <th>Severidade</th>
+                <th>Agente</th>
+                <th>Chuva / Umidade</th>
+                <th>Justificativa Técnica</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: PITCH & SÍNTESE ACADÊMICA -->
+    <section id="view-pitch" class="view-panel">
+      <div class="card" style="max-width: 900px; margin: 0 auto;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎤 Estrutura Obrigatória do Pitch (Vídeo de até 5 Minutos)</div>
+            <div class="card-subtitle">Roteiro palavra por palavra respondendo às 5 perguntas exigidas no edital</div>
+          </div>
+          <a href="apresentacao_slides.html" target="_blank" class="btn-action-small" style="background-color: var(--accent); color: white;">
+            📽️ Abrir Slides de Apresentação
+          </a>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <div class="sector-card">
+            <div style="color: var(--primary); font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">
+              1. Qual é o problema? (0:00 - 0:50)
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              No Brasil, os desastres em áreas de encostas urbanas — como deslizamentos de terra deflagrados por chuvas extremas — causam perdas humanas e materiais recorrentes. O problema técnico enfrentado pelas Defesas Civis municipais é a <strong>dispersão dos dados ambientais</strong> (pluviômetros e sensores consultados em sistemas isolados) e a <strong>falta de fluxos padronizados</strong> para validar os dados e formalizar o despacho rápido do alerta, gerando lentidão e sobrecarga cognitiva no momento mais crítico.
+            </p>
+          </div>
+
+          <div class="sector-card">
+            <div style="color: var(--primary); font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">
+              2. Qual meta do PN-PDC está sendo trabalhada? (0:50 - 1:40)
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              A proposta alinha-se diretamente à <strong>Meta 2.2.2</strong> do primeiro Plano Nacional de Proteção e Defesa Civil (PN-PDC 2025–2035, instituído pelo Decreto nº 12.652/2025): <em>"Elaborar e atualizar protocolo conjunto de monitoramento e envio de alertas de modo a unificar esses procedimentos"</em>. Esta meta pertence ao <strong>Objetivo 2.2</strong> (Expandir e aperfeiçoar os sistemas de monitoramento e alerta), no eixo de <strong>Preparação</strong>, com marco de curto prazo pactuado até <strong>2027</strong> e revisões contínuas até 2035.
+            </p>
+          </div>
+
+          <div class="sector-card">
+            <div style="color: var(--primary); font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">
+              3. Como a Computação contribui para atingir essa meta? (1:40 - 2:30)
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              A Ciência da Computação atua por meio da <strong>convergência arquitetural</strong>: integrando a telemetria ambiental em tempo real, validando anomalias e dados desatualizados, aplicando regras determinísticas de triagem e fornecendo interfaces padronizadas para apoio à decisão. Isso unifica tecnologicamente o protocolo operacional, garantindo que o agente humano receba a informação já triada, com trilha auditável de auditoria e formato de intercâmbio padronizado (CAP).
+            </p>
+          </div>
+
+          <div class="sector-card">
+            <div style="color: var(--primary); font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">
+              4. Como a solução funciona? (2:30 - 3:45)
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              O <strong>AlertaEncosta</strong> opera em três etapas: <strong>Entrada:</strong> ingestão contínua de leituras de chuva acumulada (mm) e umidade volumétrica do solo (%) dos setores monitorados. <strong>Processamento:</strong> validação de integridade dos dados, checagem de desatualização (> 30s) e disparo da regra combinada de atenção (Chuva 1h &ge; 30mm e Umidade &ge; 80%). <strong>Saída:</strong> destaque visual no mapa de setores, fila de triagem imediata, formulário padronizado com campos obrigatórios de autoria e justificativa técnica, emissão de alerta estruturado e persistência no histórico imutável.
+            </p>
+          </div>
+
+          <div class="sector-card">
+            <div style="color: var(--primary); font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">
+              5. Como será medido o resultado? (3:45 - 4:40)
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              O resultado é mensurado pelo indicador formal da solução: a <strong>redução percentual do tempo médio entre a detecção do limiar e o despacho do alerta</strong>, expressa por <code>Redução (%) = [(Tm - Ta) / Tm] × 100</code>. No ensaio experimental, o protótipo comprovou que o fluxo convergente apoiado (Ta) reduz em mais de <strong>40%</strong> o tempo operacional de triagem em comparação com o fluxo manual disperso (Tm), mantendo 100% de completude nos registros auditáveis.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal for Decision / Alert Dispatch -->
+  <div id="decisionModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">⚠️ Triagem e Despacho de Evento</div>
+        <button class="btn-close" onclick="closeDecisionModal()">&times;</button>
+      </div>
+      <div id="modalBody">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       STATE MANAGEMENT & DATA STRUCTURES (AlertaEncosta Prototype)
+       ========================================================================= */
+    const STORAGE_KEY_HISTORY = 'alertaencosta_history_v1';
+    const STORAGE_KEY_LAB = 'alertaencosta_lab_trials_v1';
+
+    // Sector State
+    const sectors = {
+      A: {
+        id: 'A',
+        name: 'Setor A — Vila Alta',
+        geo: 'Declividade 32° | Solo Residual | 240 moradias',
+        rain1h: 12.4,
+        soilMoisture: 58.0,
+        lastUpdate: Date.now(),
+        status: 'NORMAL' // 'NORMAL', 'ALERT', 'STALE'
+      },
+      B: {
+        id: 'B',
+        name: 'Setor B — Morro da Esperança',
+        geo: 'Declividade 41° | Solo Arenoso | 410 moradias',
+        rain1h: 18.2,
+        soilMoisture: 64.5,
+        lastUpdate: Date.now(),
+        status: 'NORMAL'
+      },
+      C: {
+        id: 'C',
+        name: 'Setor C — Encosta Sul',
+        geo: 'Declividade 27° | Talude Urbano | 185 moradias',
+        rain1h: 8.5,
+        soilMoisture: 52.0,
+        lastUpdate: Date.now(),
+        status: 'NORMAL'
+      }
+    };
+
+    // Pending events for human triage
+    let pendingEvents = [];
+
+    // Lab Trial State
+    let labRunning = false;
+    let labStartTime = 0;
+    let labTimerInterval = null;
+
+    /* =========================================================================
+       INITIALIZATION & CLOCK
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      initClock();
+      renderSectors();
+      renderHistory();
+      renderLabStats();
+      syncProtocolSectorData();
+      checkStaleTelemetry();
+
+      // Check telemetry freshness every 3 seconds
+      setInterval(() => {
+        checkStaleTelemetry();
+        renderSectors();
+      }, 3000);
+    });
+
+    function initClock() {
+      const clockEl = document.getElementById('clockDisplay');
+      setInterval(() => {
+        const now = new Date();
+        clockEl.textContent = now.toLocaleTimeString('pt-BR');
+      }, 1000);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
+
+      event.currentTarget.classList.add('active');
+      document.getElementById(`view-${tabId}`).classList.add('active');
+
+      if (tabId === 'protocol') {
+        syncProtocolSectorData();
+      }
+    }
+
+    /* =========================================================================
+       SECTOR RENDERING & STATUS LOGIC (Didactic Rule & Staleness)
+       ========================================================================= */
+    function evaluateSectorRule(s) {
+      // Rule: Rain1h >= 30mm AND SoilMoisture >= 80%
+      const isStale = (Date.now() - s.lastUpdate) > 30000; // 30 seconds
+      if (isStale) {
+        s.status = 'STALE';
+        return;
+      }
+      if (s.rain1h >= 30.0 && s.soilMoisture >= 80.0) {
+        s.status = 'ALERT';
+      } else {
+        s.status = 'NORMAL';
+      }
+    }
+
+    function checkStaleTelemetry() {
+      Object.values(sectors).forEach(s => {
+        evaluateSectorRule(s);
+      });
+    }
+
+    function renderSectors() {
+      const container = document.getElementById('sectorsContainer');
+      container.innerHTML = '';
+
+      Object.values(sectors).forEach(s => {
+        const card = document.createElement('div');
+        let cardClass = 'sector-card';
+        let badgeClass = 'badge-normal';
+        let badgeText = 'Estável';
+
+        if (s.status === 'ALERT') {
+          cardClass += ' status-alert';
+          badgeClass = 'badge-alert';
+          badgeText = 'Atenção Crítica';
+        } else if (s.status === 'STALE') {
+          cardClass += ' status-stale';
+          badgeClass = 'badge-stale';
+          badgeText = 'Desatualizado';
+        }
+
+        const rainPercent = Math.min(100, (s.rain1h / 50) * 100);
+        const moistPercent = Math.min(100, s.soilMoisture);
+
+        const secondsAgo = Math.floor((Date.now() - s.lastUpdate) / 1000);
+
+        card.className = cardClass;
+        card.innerHTML = `
+          <div class="sector-head">
+            <div>
+              <div class="sector-name">${s.name}</div>
+              <div class="sector-geo">${s.geo}</div>
+            </div>
+            <span class="sector-badge ${badgeClass}">${badgeText}</span>
+          </div>
+
+          <div class="telemetry-row">
+            <span class="telemetry-label">🌧️ Precipitação 1h</span>
+            <span class="telemetry-val ${s.rain1h >= 30 ? 'val-critical' : ''}">${s.rain1h.toFixed(1)} mm</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: ${rainPercent}%; background-color: ${s.rain1h >= 30 ? 'var(--danger)' : 'var(--primary)'};"></div>
+          </div>
+
+          <div class="telemetry-row">
+            <span class="telemetry-label">💧 Umidade do Solo</span>
+            <span class="telemetry-val ${s.soilMoisture >= 80 ? 'val-critical' : ''}">${s.soilMoisture.toFixed(1)} %</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: ${moistPercent}%; background-color: ${s.soilMoisture >= 80 ? 'var(--danger)' : 'var(--accent)'};"></div>
+          </div>
+
+          <div class="sector-footer">
+            <span>Última leitura: ${secondsAgo}s atrás</span>
+            <button class="btn-action-small" onclick="quickTriageSector('${s.id}')">Triar Setor</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    /* =========================================================================
+       SCENARIO INJECTION LOGIC
+       ========================================================================= */
+    function loadScenario(type) {
+      const now = Date.now();
+      const fb = document.getElementById('injectionFeedback');
+
+      if (type === 'normal') {
+        sectors.A.rain1h = 10.2; sectors.A.soilMoisture = 55.0; sectors.A.lastUpdate = now;
+        sectors.B.rain1h = 14.5; sectors.B.soilMoisture = 60.0; sectors.B.lastUpdate = now;
+        sectors.C.rain1h = 6.0;  sectors.C.soilMoisture = 48.0; sectors.C.lastUpdate = now;
+        pendingEvents = [];
+        fb.innerHTML = '<span style="color:var(--success);">✅ Cenário Estável aplicado. Nenhum limiar excedido.</span>';
+      } 
+      else if (type === 'critical_b') {
+        sectors.A.rain1h = 18.0; sectors.A.soilMoisture = 62.0; sectors.A.lastUpdate = now;
+        sectors.B.rain1h = 42.5; sectors.B.soilMoisture = 88.0; sectors.B.lastUpdate = now; // TRIGGERS!
+        sectors.C.rain1h = 12.0; sectors.C.soilMoisture = 56.0; sectors.C.lastUpdate = now;
+        registerPendingEvent('B', 42.5, 88.0);
+        fb.innerHTML = '<span style="color:var(--danger);">🚨 Cenário Crítico: Regra acionada no Setor B (Morro da Esperança)!</span>';
+      }
+      else if (type === 'high_rain_only') {
+        sectors.A.rain1h = 8.0;  sectors.A.soilMoisture = 50.0; sectors.A.lastUpdate = now;
+        sectors.B.rain1h = 38.0; sectors.B.soilMoisture = 55.0; sectors.B.lastUpdate = now; // Rain high, moisture NOT
+        sectors.C.rain1h = 15.0; sectors.C.soilMoisture = 58.0; sectors.C.lastUpdate = now;
+        pendingEvents = [];
+        fb.innerHTML = '<span style="color:var(--warning);">🟡 Chuva elevada isolada (38mm), mas solo não saturado (55%). Condição combinada NÃO atingida.</span>';
+      }
+      else if (type === 'stale_data') {
+        // Set timestamp back 60 seconds
+        const oldTime = now - 65000;
+        sectors.A.lastUpdate = oldTime;
+        sectors.B.lastUpdate = oldTime;
+        sectors.C.lastUpdate = oldTime;
+        fb.innerHTML = '<span style="color:var(--warning);">⏳ Cenário Desatualizado: Última leitura há mais de 60s. Telemetria marcada como STALE.</span>';
+      }
+      else if (type === 'invalid_input') {
+        fb.innerHTML = '<span style="color:var(--danger);">❌ Teste de Invalidação: Tentando injetar chuva negativa (-10mm)...</span>';
+        setTimeout(() => {
+          fb.innerHTML = '<span style="color:var(--danger);">🛡️ Entrada Rejeitada pelo Validador de Entrada: Chuva não pode ser negativa ou acima de 300mm/h. Leitura anterior preservada intacta.</span>';
+        }, 600);
+        return;
+      }
+
+      evaluateSectorRule(sectors.A);
+      evaluateSectorRule(sectors.B);
+      evaluateSectorRule(sectors.C);
+      renderSectors();
+      renderPendingEvents();
+    }
+
+    function injectManualData() {
+      const sId = document.getElementById('manualSector').value;
+      const rain = parseFloat(document.getElementById('manualRain').value);
+      const moist = parseFloat(document.getElementById('manualMoisture').value);
+      const fb = document.getElementById('injectionFeedback');
+
+      // Validation Gate
+      if (isNaN(rain) || rain < 0 || rain > 350) {
+        fb.innerHTML = '<span style="color:var(--danger);">❌ Validação Falhou: Chuva fora do limite válido [0 a 350 mm].</span>';
+        return;
+      }
+      if (isNaN(moist) || moist < 0 || moist > 100) {
+        fb.innerHTML = '<span style="color:var(--danger);">❌ Validação Falhou: Umidade do solo fora do limite válido [0% a 100%].</span>';
+        return;
+      }
+
+      sectors[sId].rain1h = rain;
+      sectors[sId].soilMoisture = moist;
+      sectors[sId].lastUpdate = Date.now();
+
+      evaluateSectorRule(sectors[sId]);
+      renderSectors();
+
+      if (sectors[sId].status === 'ALERT') {
+        registerPendingEvent(sId, rain, moist);
+        fb.innerHTML = `<span style="color:var(--danger);">🚨 Sucesso: Setor ${sId} atingiu o limiar crítico didático! Evento gerado para triagem.</span>`;
+      } else {
+        fb.innerHTML = `<span style="color:var(--success);">✅ Dados do Setor ${sId} atualizados com sucesso (Sem acionamento de alarme).</span>`;
+      }
+      renderPendingEvents();
+    }
+
+    function registerPendingEvent(sectorId, rain, moist) {
+      // Avoid duplicate pending event for same sector
+      if (!pendingEvents.some(e => e.sectorId === sectorId)) {
+        pendingEvents.push({
+          id: 'EVT-' + Math.floor(1000 + Math.random() * 9000),
+          sectorId: sectorId,
+          sectorName: sectors[sectorId].name,
+          rain1h: rain,
+          soilMoisture: moist,
+          timestamp: new Date().toLocaleTimeString('pt-BR')
+        });
+      }
+      updateEventBadge();
+    }
+
+    function updateEventBadge() {
+      const badge = document.getElementById('eventBadge');
+      badge.textContent = pendingEvents.length;
+    }
+
+    function renderPendingEvents() {
+      const container = document.getElementById('pendingEventsContainer');
+      updateEventBadge();
+
+      if (pendingEvents.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px;">Nenhum evento crítico aguardando triagem no momento.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      pendingEvents.forEach(evt => {
+        const item = document.createElement('div');
+        item.className = 'event-card';
+        item.innerHTML = `
+          <div class="event-info">
+            <h4>⚠️ Gatilho de Atenção: ${evt.sectorName} (${evt.id})</h4>
+            <p>Registrado às <strong>${evt.timestamp}</strong> | Chuva 1h: <span style="color:#f87171; font-weight:bold;">${evt.rain1h.toFixed(1)} mm</span> | Umidade: <span style="color:#f87171; font-weight:bold;">${evt.soilMoisture.toFixed(1)}%</span></p>
+          </div>
+          <div>
+            <button class="btn-primary" style="padding: 8px 16px; font-size:0.8rem; width:auto;" onclick="openTriageForEvent('${evt.sectorId}')">
+              Triar e Decidir
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    /* =========================================================================
+       PROTOCOL FORM & SUBMISSION (Meta 2.2.2)
+       ========================================================================= */
+    function syncProtocolSectorData() {
+      const sId = document.getElementById('protoSector').value;
+      const s = sectors[sId];
+
+      document.getElementById('protoRainVal').textContent = `${s.rain1h.toFixed(1)} mm`;
+      document.getElementById('protoMoistVal').textContent = `${s.soilMoisture.toFixed(1)} %`;
+
+      const badge = document.getElementById('protoStatusVal');
+      badge.className = 'sector-badge ' + (s.status === 'ALERT' ? 'badge-alert' : s.status === 'STALE' ? 'badge-stale' : 'badge-normal');
+      badge.textContent = s.status === 'ALERT' ? 'Limiar Crítico' : s.status === 'STALE' ? 'Desatualizado' : 'Condição Estável';
+
+      // Auto customize default alert text
+      const msgArea = document.getElementById('protoMessage');
+      if (document.getElementById('protoDecision').value === 'EMITIR_ALERTA') {
+        msgArea.value = `[DEFESA CIVIL ALERTA]: Risco iminente de escorregamento de terra no ${s.name}. Moradores de encostas devem observar sinais de movimentação no solo e buscar rotas de fuga.`;
+      }
+    }
+
+    function quickTriageSector(sId) {
+      document.getElementById('protoSector').value = sId;
+      switchTabDirect('protocol');
+      syncProtocolSectorData();
+    }
+
+    function openTriageForEvent(sId) {
+      quickTriageSector(sId);
+    }
+
+    function switchTabDirect(tabId) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
+      document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+      document.getElementById(`view-${tabId}`).classList.add('active');
+    }
+
+    function updateDecisionUI() {
+      const dec = document.getElementById('protoDecision').value;
+      const sId = document.getElementById('protoSector').value;
+      const msgArea = document.getElementById('protoMessage');
+
+      if (dec === 'ENCERRAR_SEM_ALERTA') {
+        document.getElementById('protoLevel').disabled = true;
+        msgArea.value = `[REGISTRO INTERNO DEFESA CIVIL]: Evento do ${sectors[sId].name} analisado e desconsiderado após checagem in loco / reavaliação de consistência. Alerta não disparado.`;
+      } else {
+        document.getElementById('protoLevel').disabled = false;
+        msgArea.value = `[DEFESA CIVIL ALERTA]: Risco iminente de escorregamento de terra no ${sectors[sId].name}. Moradores de encostas devem observar sinais de movimentação no solo e buscar rotas de fuga.`;
+      }
+    }
+
+    function submitProtocolDecision() {
+      const sId = document.getElementById('protoSector').value;
+      const agent = document.getElementById('protoAgent').value.trim();
+      const decision = document.getElementById('protoDecision').value;
+      const level = document.getElementById('protoLevel').value;
+      const justification = document.getElementById('protoJustification').value.trim();
+      const message = document.getElementById('protoMessage').value.trim();
+
+      if (justification.length < 15) {
+        alert('A justificativa técnica deve conter no mínimo 15 caracteres para garantir a conformidade da auditoria.');
+        return;
+      }
+
+      const s = sectors[sId];
+      const entry = {
+        id: 'DEC-' + Date.now(),
+        timestamp: new Date().toLocaleString('pt-BR'),
+        sectorId: sId,
+        sectorName: s.name,
+        agent: agent,
+        decision: decision,
+        level: decision === 'ENCERRAR_SEM_ALERTA' ? 'N/A' : level,
+        rain1h: s.rain1h,
+        soilMoisture: s.soilMoisture,
+        justification: justification,
+        message: message
+      };
+
+      // Save to localStorage
+      const history = getStoredHistory();
+      history.unshift(entry);
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
+
+      // Remove from pending events if present
+      pendingEvents = pendingEvents.filter(e => e.sectorId !== sId);
+      updateEventBadge();
+      renderPendingEvents();
+      renderHistory();
+
+      alert(`✅ Decisão registrada com sucesso no Protocolo Unificado (ID: ${entry.id})!\nSetor: ${s.name}\nDecisão: ${decision}`);
+      switchTabDirect('history');
+    }
+
+    function resetProtocolForm() {
+      document.getElementById('protocolForm').reset();
+      syncProtocolSectorData();
+    }
+
+    /* =========================================================================
+       LABORATORY EXPERIMENTAL ENGINE (Tm vs Ta)
+       ========================================================================= */
+    const labCases = {
+      case1: {
+        title: 'Caso 01 — Chuva intensa localizada no Morro da Esperança',
+        manualText: 'Acesse mentalmente as tabelas isoladas. Identifique o Setor B. Verifique se Chuva 1h (42.5mm) >= 30 E Umidade (88%) >= 80%. Digite manualmente o despacho e a justificativa completa no bloco abaixo sem suporte de autocompletar.',
+        supportedText: 'Arquitetura convergente já identificou o Setor B como crítico. Pré-carregamento ativado com limiares validados. Confirme o operador e despache com um clique.'
+      },
+      case2: {
+        title: 'Caso 02 — Saturação hídrica rápida após temporal vespertino',
+        manualText: 'Faça a checagem manual entre a planilha pluviométrica e o sensor piezométrico. Confirme os valores de saturação para o Setor A.',
+        supportedText: 'Dados de telemetria integrados diretamente no painel. O sistema sugere a minuta de despacho CAP automaticamente.'
+      },
+      case3: {
+        title: 'Caso 03 — Análise de encosta após precipitação acumulada',
+        manualText: 'Verifique os dados brutos e copie a mensagem de alerta manualmente para o registro de despacho.',
+        supportedText: 'Fluxo apoiado: triagem instantânea com registro auditável em formato JSON.'
+      }
+    };
+
+    function setupLabCase() {
+      const mode = document.getElementById('labMode').value;
+      const cKey = document.getElementById('labCase').value;
+      const caseData = labCases[cKey];
+
+      document.getElementById('labInstructionsTitle').textContent = caseData.title + ` [Modo: ${mode === 'manual' ? 'Manual (Tm)' : 'Apoiado (Ta)'}]`;
+      document.getElementById('labInstructionsText').textContent = mode === 'manual' ? caseData.manualText : caseData.supportedText;
+    }
+
+    function startLabTrial() {
+      labRunning = true;
+      labStartTime = Date.now();
+      document.getElementById('btnLabStart').disabled = true;
+      document.getElementById('btnLabStop').disabled = false;
+      document.getElementById('labMode').disabled = true;
+      document.getElementById('labCase').disabled = true;
+
+      labTimerInterval = setInterval(() => {
+        const elapsed = (Date.now() - labStartTime) / 1000;
+        document.getElementById('labTimer').textContent = elapsed.toFixed(1) + 's';
+      }, 100);
+    }
+
+    function finishLabTrial() {
+      if (!labRunning) return;
+      clearInterval(labTimerInterval);
+      labRunning = false;
+
+      const elapsed = parseFloat(((Date.now() - labStartTime) / 1000).toFixed(1));
+      const mode = document.getElementById('labMode').value;
+      const caseKey = document.getElementById('labCase').value;
+
+      document.getElementById('btnLabStart').disabled = false;
+      document.getElementById('btnLabStop').disabled = true;
+      document.getElementById('labMode').disabled = false;
+      document.getElementById('labCase').disabled = false;
+
+      // Save trial
+      const trials = getStoredTrials();
+      trials.unshift({
+        id: trials.length + 1,
+        mode: mode,
+        caseName: labCases[caseKey].title,
+        duration: elapsed,
+        timestamp: new Date().toLocaleTimeString('pt-BR')
+      });
+      localStorage.setItem(STORAGE_KEY_LAB, JSON.stringify(trials));
+
+      renderLabStats();
+    }
+
+    function getStoredTrials() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY_LAB)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function clearLabTrials() {
+      if (confirm('Deseja limpar todos os ensaios cronometrados registrados?')) {
+        localStorage.removeItem(STORAGE_KEY_LAB);
+        renderLabStats();
+      }
+    }
+
+    function renderLabStats() {
+      const trials = getStoredTrials();
+      const tbody = document.getElementById('labTrialsBody');
+
+      if (trials.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Nenhum ensaio computado até o momento.</td></tr>';
+        document.getElementById('valTm').textContent = '--';
+        document.getElementById('valTa').textContent = '--';
+        document.getElementById('valReduction').textContent = '--';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      let sumManual = 0, countManual = 0;
+      let sumSupported = 0, countSupported = 0;
+
+      trials.forEach(t => {
+        if (t.mode === 'manual') {
+          sumManual += t.duration;
+          countManual++;
+        } else {
+          sumSupported += t.duration;
+          countSupported++;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${t.id}</td>
+          <td><span class="sector-badge ${t.mode === 'manual' ? 'badge-stale' : 'badge-normal'}">${t.mode === 'manual' ? 'Manual (Tm)' : 'Apoiado (Ta)'}</span></td>
+          <td>${t.caseName}</td>
+          <td style="font-weight: bold; color: var(--primary);">${t.duration.toFixed(1)}s</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const avgManual = countManual > 0 ? (sumManual / countManual) : null;
+      const avgSupported = countSupported > 0 ? (sumSupported / countSupported) : null;
+
+      document.getElementById('valTm').textContent = avgManual ? `${avgManual.toFixed(1)}s` : '--';
+      document.getElementById('valTa').textContent = avgSupported ? `${avgSupported.toFixed(1)}s` : '--';
+
+      if (avgManual && avgSupported && avgManual > 0) {
+        const reduction = ((avgManual - avgSupported) / avgManual) * 100;
+        document.getElementById('valReduction').textContent = `${reduction.toFixed(1)}%`;
+      } else {
+        document.getElementById('valReduction').textContent = '--';
+      }
+    }
+
+    /* =========================================================================
+       HISTORY & AUDIT LOGIC
+       ========================================================================= */
+    function getStoredHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function renderHistory() {
+      const history = getStoredHistory();
+      const tbody = document.getElementById('historyTableBody');
+
+      if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">Nenhuma decisão registrada no histórico até o momento.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      history.forEach(item => {
+        const row = document.createElement('tr');
+        const badgeColor = item.decision === 'EMITIR_ALERTA' ? 'badge-alert' : 'badge-normal';
+        row.innerHTML = `
+          <td style="font-family: monospace; font-size: 0.75rem;">${item.timestamp}</td>
+          <td><strong>${item.sectorName}</strong></td>
+          <td><span class="sector-badge ${badgeColor}">${item.decision === 'EMITIR_ALERTA' ? '🚨 Alerta Emitido' : '✅ Encerrado'}</span></td>
+          <td style="font-size: 0.75rem;">${item.level}</td>
+          <td>${item.agent}</td>
+          <td style="font-size: 0.75rem;">🌧️ ${item.rain1h.toFixed(1)}mm | 💧 ${item.soilMoisture.toFixed(1)}%</td>
+          <td style="font-size: 0.75rem; max-width: 260px;" title="${item.justification}">${item.justification}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function clearAllHistory() {
+      if (confirm('Tem certeza de que deseja apagar todo o histórico de decisões e auditoria do protótipo?')) {
+        localStorage.removeItem(STORAGE_KEY_HISTORY);
+        renderHistory();
+      }
+    }
+
+    function exportHistoryJSON() {
+      const history = getStoredHistory();
+      const exportData = {
+        projeto: 'AlertaEncosta',
+        versao: '1.0.0-academica',
+        padrao: 'CAP-v1.2-Simplificado',
+        metaPnPdc: '2.2.2 - Elaborar e atualizar protocolo conjunto de monitoramento e envio de alertas',
+        geradoEm: new Date().toISOString(),
+        totalRegistros: history.length,
+        registros: history
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `AlertaEncosta_Decisoes_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportTrialsCSV() {
+      const trials = getStoredTrials();
+      if (trials.length === 0) {
+        alert('Não há ensaios gravados para exportação.');
+        return;
+      }
+
+      let csv = 'ID,Modalidade,Caso,Tempo_Segundos,Horario\n';
+      trials.forEach(t => {
+        csv += `${t.id},"${t.mode}","${t.caseName}",${t.duration},"${t.timestamp}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `AlertaEncosta_Ensaios_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
