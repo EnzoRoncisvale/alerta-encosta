@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/relatorio", "destination": "/relatorio_tecnico.html" },
+    { "source": "/slides", "destination": "/apresentacao_slides.html" },
+    { "source": "/pitch", "destination": "/apresentacao_slides.html" }
+  ]
+}
