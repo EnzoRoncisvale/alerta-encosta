@@ -4,6 +4,8 @@
 **Instituição:** CEUB (Centro Universitário de Brasília)  
 **Projeto:** AlertaEncosta: Arquitetura Convergente para Integração de Dados Ambientais e Apoio ao Registro Padronizado de Alertas em Áreas de Encosta  
 **Vinculação ao PN-PDC 2025–2035:** Meta 2.2.2 (Decreto Federal nº 12.652/2025 e Portaria MIDR nº 3.318/2025)  
+**Deploy em Produção (Vercel):** [https://alerta-encosta.vercel.app/](https://alerta-encosta.vercel.app/)  
+**Repositório GitHub:** [https://github.com/EnzoRoncisvale/alerta-encosta](https://github.com/EnzoRoncisvale/alerta-encosta)  
 
 ---
 

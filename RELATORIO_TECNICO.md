@@ -5,6 +5,8 @@
 **Disciplina:** H3-AC — Arquiteturas Convergentes — Sistematização  
 **Tema:** Desafio de Computação Aplicada à Proteção e Defesa Civil (PN-PDC 2025–2035)  
 **Integrante:** Enzo Roncisvale  
+**Aplicação Online (Vercel):** [https://alerta-encosta.vercel.app/](https://alerta-encosta.vercel.app/)  
+**Repositório GitHub:** [https://github.com/EnzoRoncisvale/alerta-encosta](https://github.com/EnzoRoncisvale/alerta-encosta)  
 
 ---
 
